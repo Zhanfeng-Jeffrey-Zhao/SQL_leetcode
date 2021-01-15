@@ -114,3 +114,89 @@ select p.FirstName, p.LastName,a.City, a.State
 from Person p
 left join Address a on p.personId=a.PersonId
 
+#1693
+select date_id, make_name, count(distinct lead_id) as 'unique_leads', count(distinct partner_id) as 'unique_partners'
+from DailySales
+group by date_id, make_name
+
+#619
+select max(num) as 'num'
+from (
+    select num
+    from my_numbers
+    group by num
+    having count(*)=1) as temp_tab
+
+#620
+select *
+from cinema
+where (id % 2)!=0 and description not like 'boring'
+order by rating desc
+
+#627
+update salary 
+set sex = case  sex
+when 'm' then 'f'
+else 'm'
+end;
+
+#1050
+select actor_id, director_id
+from ActorDirector
+group by 1,2
+having count(*)>=3
+
+#1068
+select p.product_name, s.year, s.price
+from product p
+join sales s on s.product_id=p.product_id
+
+#1069
+select s.product_id, sum(s.quantity) as total_quantity
+from Sales s, Product p
+where s.product_id=p.product_id
+group by product_id
+
+#1075
+select project_id, round(sum(e.experience_years)/count(e.employee_id),2) as average_years
+from Project p,Employee e
+where p.employee_id=e.employee_id
+group by project_id
+
+#1076
+select project_id
+from Project
+group by project_id
+having count(employee_id)=(
+        select count(employee_id)
+        from Project
+        group by project_id
+        order by count(employee_id)desc
+        limit 1)
+
+#1082
+select seller_id
+from sales
+group by seller_id
+having sum(price)=(
+     select sum(price)
+     from sales
+     group by seller_id
+     order by sum(price) desc
+     limit 1)
+
+#1083
+select distinct s.buyer_id
+from Sales s
+left join Product p on s.product_id=p.product_id
+where s.buyer_id not in (select distinct s.buyer_id
+                    from sales s 
+                    left join product p on s.product_id=p.product_id
+                    where p.product_name = 'iPhone' ) and p.product_name='S8'
+
+#1084
+select s.product_id, p.product_name
+from sales s
+left join Product p on s.product_id=p.product_id
+group by s.product_id
+having min(s.sale_date)>='2019-01-01' and max(s.sale_date)<='2019-03-31'
