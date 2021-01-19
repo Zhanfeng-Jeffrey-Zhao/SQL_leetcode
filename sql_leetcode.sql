@@ -200,3 +200,75 @@ from sales s
 left join Product p on s.product_id=p.product_id
 group by s.product_id
 having min(s.sale_date)>='2019-01-01' and max(s.sale_date)<='2019-03-31'
+
+#1113
+SELECT extra as report_reason, COUNT(distinct post_id) as report_count
+FROM Actions
+WHERE action_date = '2019-07-04' and action ='report'
+GROUP BY extra
+
+#1098 
+select book_id, name
+from Books
+where available_from<'2019-05-23' and book_id not in (
+    select book_id
+    from Orders
+    where dispatch_date>'2018-06-23'
+    group by book_id
+having sum(quantity)>=10)
+
+#1141
+select activity_date as day, count(distinct user_id) as active_users
+from Activity
+where datediff('2019-07-27', activity_date) <30
+group by activity_date
+
+#1142
+Select ifnull(round(count(distinct session_id) /count(distinct user_id),2) ,0)as average_sessions_per_user
+from Activity
+where datediff('2019-07-27', activity_date) <30
+
+#1148
+select distinct author_id as id
+from Views
+where author_id=viewer_id
+order by author_id
+
+#1173
+select round(100*( select count(*)
+                from Delivery 
+              where order_date=customer_pref_delivery_date)/count(*),2)as immediate_percentage 
+from Delivery
+
+#1179
+select id, 
+	max(case when month = 'Jan' then revenue else null end) as Jan_Revenue,
+	max(case when month = 'Feb' then revenue else null end) as Feb_Revenue,
+	max(case when month = 'Mar' then revenue else null end) as Mar_Revenue,
+	max(case when month = 'Apr' then revenue else null end) as Apr_Revenue,
+	max(case when month = 'May' then revenue else null end) as May_Revenue,
+	max(case when month = 'Jun' then revenue else null end) as Jun_Revenue,
+	max(case when month = 'Jul' then revenue else null end) as Jul_Revenue,
+	max(case when month = 'Aug' then revenue else null end) as Aug_Revenue,
+	max(case when month = 'Sep' then revenue else null end) as Sep_Revenue,
+	max(case when month = 'Oct' then revenue else null end) as Oct_Revenue,
+	max(case when month = 'Nov' then revenue else null end) as Nov_Revenue,
+	max(case when month = 'Dec' then revenue else null end) as Dec_Revenue
+from department
+group by id
+order by id
+
+#1303
+select distinct a.employee_id, count(*) as team_size
+from employee a, employee b
+where a.team_id=b.team_id
+group by a.employee_id, a.team_id
+
+#1607
+select seller_name 
+from seller
+where seller_id not in( select seller_id
+                    from Orders
+                   where year(sale_date)=2020)
+order by seller_name
+
