@@ -332,3 +332,40 @@ select distinct user_id, count(*) as followers_count
 from followers
 group by user_id
 order by 1
+
+#1341
+(select u.name as results
+from movie_rating m
+left join users u on u.user_id=m.user_id
+group by  m.user_id
+order by count(m.user_id) desc,u.name
+limit 1)
+union
+(select m.title as results
+from movie_rating mr
+left join movies m on m.movie_id=mr.movie_id
+where year(created_at)=2020 and month(created_at)=02
+group by mr.movie_id
+order by avg(mr.rating) desc, title
+limit 1)
+
+#1683
+select tweet_id
+from tweets
+where length(content)>15
+
+#1587
+select u.name, sum(t.amount) as balance
+from transactions t
+left join users u on t.account=u.account
+group by t.account
+having sum(t.amount)>10000
+
+# 1581
+select distinct customer_id , count(*) as count_no_trans 
+from visits
+where visit_id not in (select distinct visit_id
+                       from transactions )
+group by customer_id
+
+
