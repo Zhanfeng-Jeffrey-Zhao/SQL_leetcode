@@ -272,3 +272,63 @@ where seller_id not in( select seller_id
                    where year(sale_date)=2020)
 order by seller_name
 
+# 1322
+select t.ad_id, if(t.clicked+t.viewed=0,0,round(100*t.clicked/(t.clicked+t.viewed),2)) as ctr
+from (select ad_id, count(case when action='Clicked' then 1 end ) as clicked, 
+  count(case when action='Viewed' then 1 end)as viewed
+from Ads
+group by ad_id) as t
+group by t.ad_id
+order by ctr desc, ad_id
+
+#1327
+select p.product_name,sum(unit) as unit
+from Orders o
+left join products p on o.product_id=p.product_id
+where year(o.order_date)=2020 and month(o.order_date)=02
+group by o.product_id
+having unit>=100
+
+#1571
+select w.name as  warehouse_name,sum(w.units*p.v1) as volume
+from warehouse w
+left join (select product_id, width*Length*Height as v1
+         from Products)  as p on  p.product_id=w.product_id
+group by 1
+
+#1252 
+select u.product_id, round(sum(u.units*p.price)/sum(u.units),2) as average_price
+from unitssold u
+left join prices p on p.product_id=u.product_id and u.purchase_date between p.start_date and p.end_date
+group by u.product_id
+
+#1294
+select country_name, 
+case when avg(w.weather_state)<=15 then 'Cold'
+     when avg(w.weather_state)>=25 then'Hot'
+     else 'Warm'
+     end as weather_type 
+ from weather w
+ left join countries c on w.country_id=c.country_id
+ where year(w.day)=2019 and Month(w.day)=11
+ group by w.country_id
+
+#1350
+select id, name
+from students
+where department_id  not in (
+                select id
+                from departments)
+
+#1407
+select u.name,ifnull(sum(r.distance),0) as travelled_distance
+from users u
+left join rides r on u.id=r.user_id
+group by r.user_id
+order by travelled_distance desc, name
+
+#1729
+select distinct user_id, count(*) as followers_count
+from followers
+group by user_id
+order by 1
