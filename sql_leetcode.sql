@@ -415,3 +415,26 @@ SELECT '[5-10>' AS bin, count(CASE WHEN duration/60>=5 and duration/60<10  THEN 
 SELECT '[10-15>' AS bin, count(CASE WHEN duration/60>=10 and duration/60<15 THEN 1 ELSE null END) AS total FROM Sessions union 
 SELECT '15 or more' AS bin, count(CASE WHEN (duration/60)>=15  THEN 1 ELSE null END) AS total FROM Sessions
 
+#1565
+select p.name, sum(i.rest) as rest,sum(i.paid) as paid,sum(i.canceled) as canceled,sum(i.refunded) as refunded
+from invoice i
+left join product p on p.product_id=i.product_id
+group by 1
+order by 1
+
+#1527
+SELECT * 
+FROM Patients
+WHERE conditions LIKE "DIAB1%" OR conditions LIKE "% DIAB1%"
+
+#1633
+select contest_id, round(100*count(distinct user_id)/(select count(distinct user_id) from users),2) as percentage
+from register
+group by 1
+order by percentage desc, contest_id
+
+#1517
+select *
+from users
+where mail REGEXP '^[A-Za-z ][A-Za-z0-9_./-]*@leetcode.com$'
+
