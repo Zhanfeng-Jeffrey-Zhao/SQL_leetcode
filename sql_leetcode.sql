@@ -368,4 +368,50 @@ where visit_id not in (select distinct visit_id
                        from transactions )
 group by customer_id
 
+#1378
+select eu.unique_id, e.name
+from employees e
+left join employeeuni eu on e.id=eu.id
+
+#1623
+select a.student_name AS member_A,
+       b.student_name as member_B,
+        c.student_name as member_C
+from SchoolA a, SchoolB b,SchoolC c
+where a.student_id!=b.student_id 
+      and b.student_id!=c.student_id 
+      and a.student_id!=c.student_id 
+      and a.student_name!=b.student_name 
+      and a.student_name!=c.student_name 
+      and b.student_name!=c.student_name
+
+#1484
+select sell_date, count(distinct product) as num_sold, GROUP_CONCAT(DISTINCT product ORDER BY product) AS products
+from Activities
+group by sell_date
+order by sell_date
+
+#1565
+select left(order_date, 7) as month, count(distinct order_id) as order_count, count(distinct customer_id) as customer_count
+from orders
+where invoice>20
+group by month
+
+#1661
+select machine_id, round(avg(case when activity_type='end' then timestamp end)-avg(case when activity_type='start' then timestamp end),3) as processing_time
+from activity
+group by 1
+
+#1435
+SELECT '[0-5>' AS bin,sum(case when duration/60<5 then 1 else 0 end) as total
+from sessions union
+SELECT '[5-10>' AS bin, sum(CASE WHEN duration/60>=5 and duration/60<10  THEN 1 ELSE 0 END) AS total FROM Sessions  union
+SELECT '[10-15>' AS bin, sum(CASE WHEN duration/60>=10 and duration/60<15 THEN 1 ELSE 0 END) AS total FROM Sessions union 
+SELECT '15 or more' AS bin, sum(CASE WHEN (duration/60)>=15  THEN 1 ELSE 0 END) AS total FROM Sessions
+##Method2
+SELECT '[0-5>' AS bin,count(case when duration/60<5 then 1 else null end) as total
+from sessions union
+SELECT '[5-10>' AS bin, count(CASE WHEN duration/60>=5 and duration/60<10  THEN 1 ELSE null END) AS total FROM Sessions  union
+SELECT '[10-15>' AS bin, count(CASE WHEN duration/60>=10 and duration/60<15 THEN 1 ELSE null END) AS total FROM Sessions union 
+SELECT '15 or more' AS bin, count(CASE WHEN (duration/60)>=15  THEN 1 ELSE null END) AS total FROM Sessions
 
