@@ -438,3 +438,41 @@ select *
 from users
 where mail REGEXP '^[A-Za-z ][A-Za-z0-9_./-]*@leetcode.com$'
 
+#1211
+select query_name,round(sum(rating/position)/count(*),2) as quality,
+round(100*sum(case when rating<3 then 1 else 0 end)/count(*),2) as poor_query_percentage 
+from queries
+group by query_name
+
+#1543
+select lower(trim(product_name))as product_name, left(sale_date, 7) as sale_date,count(*) as total 
+from sales
+group by 1,2
+order by 1,2
+
+#1241
+select distinct s1.sub_id as post_id, count(distinct s2.sub_id) as number_of_comments
+from submissions s1
+left join submissions s2 on s2.parent_id=s1.sub_id
+where s1.parent_id is null
+group by 1
+
+#1667
+SELECT user_id, concat(upper(left(name,1)),lower(right(name,length(name)-1))) as name FROM Users
+order by user_id
+
+#1495
+select distinct c.title
+from content c
+left join tvprogram tv on c.content_id=tv.content_id
+where kids_content='Y' and year(program_date)=2020 and month(program_date)=06 and content_type='Movies'
+
+#1731
+select distinct e1.reports_to as employee_id,  e2.name, count(*) as reports_count, round(avg(e1.age)) as average_age
+from employees e1
+left join employees  e2  on e1.reports_to=e2.employee_id
+where  e1.reports_to is not null
+group by 1
+order by 1
+
+
