@@ -475,4 +475,111 @@ where  e1.reports_to is not null
 group by 1
 order by 1
 
+#1445
+select  sale_date, sum(case when fruit='apples' then sold_num else -sold_num end) as diff
+from sales
+group by 1
+
+#1393
+select stock_name, sum(case when operation='sell' then price else -price end) as capital_gain_loss
+from stocks
+group by 1
+
+#1270
+SELECT e1.employee_id
+FROM Employees e1,
+     Employees e2,
+     Employees e3
+WHERE e1.manager_id = e2.employee_id
+  AND e2.manager_id = e3.employee_id
+  AND e3.manager_id = 1 
+  AND e1.employee_id != 1
+
+#1308
+select s1.gender, s1.day, sum(s2.score_points) as total
+from scores s1
+left join scores s2 on s1.day>=s2.day and s1.gender=s2.gender 
+group by 1, 2
+order by 1,2
+#method 2
+SELECT gender, day, 
+       SUM(score_points) OVER(PARTITION BY gender ORDER BY day) AS total
+FROM Scores
+
+#1285
+SELECT min(log_id) as start_id, 
+       max(log_id) as end_id
+FROM (SELECT log_id, RANK() OVER(ORDER BY log_id) as num
+      FROM Logs) a
+GROUP BY log_id – num
+
+#1699
+select LEAST(from_id, to_id) as person1, GREATEST(from_id, to_id) as person2,
+count(*) as call_count, sum(duration) as total_duration
+from calls
+group by 1,2
+
+#1596
+WITH fre AS (
+SELECT customer_id, product_id, COUNT(product_id) as freq
+FROM Orders 
+GROUP BY 1,2 )
+
+SELECT f.customer_id, f.product_id, p.product_name
+FROM fre f
+left join Products p on p.product_id=f.product_id
+WHERE freq = (SELECT MAX(freq)
+              FROM fre f2
+            WHERE f.customer_id=f2.customer_id )
+#method 2
+SELECT customer_id, product_id, product_name
+FROM (
+    SELECT O.customer_id, O.product_id, P.product_name, 
+    RANK() OVER (PARTITION BY customer_id ORDER BY COUNT(O.product_id) DESC) AS rnk
+    FROM Orders O
+    JOIN Products P ON O.product_id = P.product_id  
+    GROUP BY customer_id, product_id
+) temp
+WHERE rnk = 1 
+ORDER BY customer_id, product_id
+
+#614
+select distinct followee as follower, count(distinct follower) as num
+from follow
+where followee in (select distinct follower from follow ) 
+group by 1
+order by 1
+
+#177
+CREATE FUNCTION getNthHighestSalary(N INT) RETURNS INT
+BEGIN
+  RETURN (
+      # Write your MySQL query statement below.
+       select distinct Salary
+      from 
+      (select DENSE_RANK() over (order by Salary desc) as r, Salary
+        from Employee
+       ) as t
+      where r =N
+      
+  );
+END
+
+#184
+SELECT dep.Name as Department, emp.Name as Employee, emp.Salary 
+from Department dep
+left join Employee emp on emp.DepartmentId=dep.Id 
+where  emp.Salary=(Select max(Salary) from Employee e2  where e2.DepartmentId=dep.Id)
+
+#178
+Select score, dense_rank() over(order by score DESC) as rank
+from scores;
+
+#180
+select distinct x.num as ConsecutiveNums
+from( select num,Lag(num, 1) over(order by id) as num_2,
+                 Lag(num, 2) over(order by id) as num_3
+      from logs) x
+where x.num = x.num_2 and x.num = x.num_3
+
 
