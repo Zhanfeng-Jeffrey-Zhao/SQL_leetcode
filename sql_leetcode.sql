@@ -582,4 +582,21 @@ from( select num,Lag(num, 1) over(order by id) as num_2,
       from logs) x
 where x.num = x.num_2 and x.num = x.num_3
 
+#626
+SELECT CASE WHEN id%2=1 AND id<(SELECT COUNT(*) FROM seat) THEN id+1
+            WHEN id%2=0 THEN id-1 ELSE id END AS id,student
+ FROM seat 
+ ORDER BY id;
+#method 2
+select id,
+case when id%2=0 then (select student from seat where id=s.id-1)
+when id%2 = 1 and id<(select count(*) from seat) then (select student from seat where id=(s.id+1))
+else student end as student
+from seat s
+
+#1355
+with a as (select activity,count(*) as num from Friends group by activity)
+select activity
+from a
+where num != (select min(num) from a) and num !=(select max(num) from a)
 
