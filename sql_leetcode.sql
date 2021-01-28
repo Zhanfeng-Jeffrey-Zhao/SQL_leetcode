@@ -600,3 +600,40 @@ select activity
 from a
 where num != (select min(num) from a) and num !=(select max(num) from a)
 
+#1454
+SELECT DISTINCT a.id, (SELECT name FROM Accounts WHERE id=a.id) name
+FROM Logins a, Logins b
+WHERE a.id=b.id AND
+DATEDIFF(a.login_date,b.login_date) BETWEEN 1 AND 4
+GROUP BY a.id, a.login_date
+HAVING COUNT(DISTINCT b.login_date)=4
+
+#1204
+with a as (select person_name, turn, sum(weight) over(order by turn) as total
+          from queue)
+
+select person_name 
+from a
+where turn in (select max(turn)
+              from a
+              where total<=1000)
+
+#1126
+with a as(select business_id,event_type, occurences, avg(occurences) over (partition by event_type) as ave
+from events
+)
+
+select distinct business_id
+from a
+where occurences>ave
+group by business_id
+having count(distinct event_type)>1
+
+#262
+select request_at as 'Day', round(sum(case when status='completed' then 0 else 1 end)/count(*),2) as 'Cancellation Rate'
+from trips
+where client_id in (select users_id from users where banned='No')
+   and  driver_id in (select users_id from users where banned='No')
+   and request_at between '2013-10-01' and  '2013-10-03'
+group by 1
+
