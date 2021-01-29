@@ -620,8 +620,7 @@ where turn in (select max(turn)
 
 #1126
 with a as(select business_id,event_type, occurences, avg(occurences) over (partition by event_type) as ave
-from events
-)
+from events)
 
 select distinct business_id
 from a
@@ -636,4 +635,54 @@ where client_id in (select users_id from users where banned='No')
    and  driver_id in (select users_id from users where banned='No')
    and request_at between '2013-10-01' and  '2013-10-03'
 group by 1
+
+#185
+with tem as (select name, salary, DepartmentId,
+         dense_rank()over(partition by DepartmentId order by salary desc) as rnk
+          from employee)
+
+select d.name as department, t.name as employee, salary
+from tem t
+join department d on t.DepartmentId=d.Id
+where rnk<=3
+
+#601
+select distinct s1.*
+from stadium s1,stadium s2,stadium s3
+where s1.people>=100 and s2.people>=100 and s3.people>=100
+and (
+    (s1.id-s2.id=1 and s1.id-s3.id=2) 
+    or(s3.id-s1.id=1 and s1.id-s2.id=1)
+    or (s2.id-s1.id=1 and s3.id-s1.id=2)
+)
+order by s1.visit_date
+
+#1479
+select item_category as CATEGORY, 
+sum(case when weekday(order_date)=0 then quantity else 0 end) as 'MONDAY',
+sum(case when weekday(order_date)=1 then quantity else 0 end) as 'TUESDAY',
+sum(case when weekday(order_date)=2 then quantity else 0 end) as 'WEDNESDAY',
+sum(case when weekday(order_date)=3 then quantity else 0 end) as 'THURSDAY',
+sum(case when weekday(order_date)=4 then quantity else 0 end) as 'FRIDAY',
+sum(case when weekday(order_date)=5 then quantity else 0 end) as 'SATURDAY',
+sum(case when weekday(order_date)=6 then quantity else 0 end) as 'SUNDAY'
+from orders o
+right join items i on  o.item_id=i.item_id
+group by 1
+order by 1
+
+#1412
+WITH tem AS 
+(
+	SELECT exam_id, student_id, 
+	RANK() OVER(partition by exam_id order by score DESC) AS s1,
+	RANK() OVER(partition by exam_id order by score) AS s2
+	FROM Exam 
+)
+
+SELECT DISTINCT e.student_id, s.student_name
+FROM Exam e 
+LEFT JOIN Student s ON s.student_id = e.student_id
+WHERE e.student_id NOT IN (SELECT student_id FROM tem WHERE s1 = 1 OR s2 = 1)
+order by 1
 
