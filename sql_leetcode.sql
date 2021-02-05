@@ -686,3 +686,61 @@ LEFT JOIN Student s ON s.student_id = e.student_id
 WHERE e.student_id NOT IN (SELECT student_id FROM tem WHERE s1 = 1 OR s2 = 1)
 order by 1
 
+#1194
+with tem as (select first_player as player, first_score as score
+        from matches
+        Union all
+        select second_player as player, second_score as score
+        from matches),
+
+tem2 as (select player, sum(score) as total
+          from tem
+        group by player)
+
+select distinct p.group_id, 
+FIRST_VALUE(t2.player) OVER(partition by p.group_id ORDER BY  total desc,player) as player_id
+from tem2 t2
+left join players p on p.player_id=t2.player
+
+#1421
+select q.id, q.year, ifnull(n.npv,0) as npv
+from queries q
+left join npv n on (q.id=n.id) and (q.year=n.year)
+
+#1468
+select company_id,employee_id,employee_name,
+case when max(salary) over(partition by company_id)<1000 then salary
+when max(salary) over(partition by company_id) between 1000 and 10000 then round(salary*(1-0.24))
+else round(salary*(1-0.49))
+end  as salary
+from salaries
+
+#1398
+select * 
+from customers
+where customer_id in(select customer_id from orders where product_name='A')
+and customer_id in(select customer_id from orders where product_name='B')
+and customer_id not in(select customer_id from orders where product_name='C')
+
+#1709 
+select user_id, max(diff) as biggest_window
+from (select *,
+      datediff(lead (visit_date,1,'2021-1-1') over(partition by user_id order by visit_date),
+               visit_date) as diff
+      from uservisits) a
+group by 1
+order by 1
+
+#1715
+select sum(b.apple_count+ifnull(c.apple_count,0)) as apple_count,
+sum(b.orange_count+ifnull(c.orange_count,0) ) as orange_count
+from boxes b
+left join chests c on b.chest_id=c.chest_id
+
+#1741
+select event_day as day, emp_id, sum(out_time-in_time) as total_time
+from employees
+group by 1,2
+order by 3
+
+
