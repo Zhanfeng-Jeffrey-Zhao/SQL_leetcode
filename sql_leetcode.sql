@@ -833,3 +833,51 @@ from products
 group by product_id 
 having min(change_date)>'2019-08-16'
 
+#534
+select player_id, event_date,
+sum(games_played) over(partition by player_id order by event_date) as games_played_so_far 
+from activity
+
+#1364
+with tem as (
+    select cu.customer_id, cu.customer_name,count(ct.contact_name) as contacts_cnt,
+     sum(case when contact_name in (select customer_name from customers) then 1 else 0 end ) as          trusted_contacts_cnt 
+     from customers cu
+      left join contacts ct on cu.customer_id=ct.user_id
+       group by 1)
+select invoice_id, customer_name,price, contacts_cnt,trusted_contacts_cnt 
+from invoices i
+left join tem t on i.user_id=t.customer_id
+order by 1
+
+#1077
+select project_id, employee_id
+from (select p.project_id,e.employee_id,dense_rank() over(partition by p.project_id order by experience_years desc) as rnk
+from project p 
+left join employee e on e. employee_id=p.employee_id) tem
+where rnk=1
+
+#1440
+select e.left_operand,e.operator,e.right_operand,
+case when v1.value>v2.value and operator='>' then 'true'
+     when  v1.value=v2.value and operator='=' then 'true'
+     when  v1.value<v2.value and operator='<' then 'true'
+     else 'false' end as  value
+from expressions e
+left join Variables v1 on v1.name=left_operand
+left  join Variables v2 on v2.name=right_operand
+
+#1613
+with RECURSIVE seq as (
+    select 1 as id
+    union all
+    select id+1 
+    from seq
+    where id<(select max(customer_id)from customers))    
+select id as ids
+from seq s
+left join customers  c on s.id=c.customer_id
+where c.customer_id is null
+
+
+
