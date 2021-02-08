@@ -751,3 +751,85 @@ from orders) tem
 left join customers on customers.customer_id=tem.customer_id
 where rnk<=3
 order by customer_name,customers.customer_id,order_date desc
+				
+#1112
+select student_id, course_id, grade
+from( select *, 
+     dense_rank() over(partition by student_id order by grade desc,course_id asc) as rnk
+     from Enrollments) tem
+where rnk=1
+
+#1747
+select distinct l1.account_id
+from loginfo l1
+left join loginfo l2 on (l1.account_id=l2.account_id) and (l1.ip_address!=l2.ip_address) 
+where (l2.login<=l1.login and l1.login<=l2.logout)
+  or ( l2.login<=l1.logout and l1.logout<=l2.logout)
+
+#1321
+SELECT * 
+FROM (select distinct visited_on, 
+sum(amount)over(order by visited_on RANGE BETWEEN INTERVAL 6 DAY PRECEDING AND CURRENT ROW ) as amount,
+round(sum(amount)over(order by visited_on RANGE BETWEEN INTERVAL 6 DAY PRECEDING AND CURRENT ROW)/7,2) as average_amount
+from customer) tem
+WHERE visited_on >= (SELECT min(visited_on) FROM Customer) + 6
+ORDER BY 1
+
+#608
+select id,
+case when p_id is null then 'Root'
+when id not in (select distinct p_id from tree where p_id is not null) then 'Leaf'
+else 'Inner' end as Type
+from tree
+
+#1193
+select left(trans_date,7) as month,
+country, count(*) as trans_count, count(case when state='approved' then 1 end) as approved_count,sum(amount) as trans_total_amount, sum(case when state='approved' then amount else 0 end)  as approved_total_amount
+from transactions
+group by 1,2
+
+#1264
+select distinct page_id as recommended_page
+from likes
+where user_id in(select user1_id as id from friendship where user2_id=1
+                union all
+                select user2_id as id from friendship where user1_id=1)
+ and page_id not in (select page_id from likes where user_id=1)
+
+#1132
+with a as (select count(distinct id)/count(distinct post) as average
+from(select a.post_id as post,a.action_date ,r.post_id as id
+from actions a
+left join removals r on a.post_id=r.post_id
+where a.extra='spam') tem
+group by action_date)
+select round(100*avg(average),2) as average_daily_percent
+from a
+
+#1369 
+select username, activity, startDate, endDate
+from(select *, 
+dense_rank()over(partition by username order by startDate desc, endDate desc) as rnk,
+count(username)over(partition by username) as cnt
+from useractivity) tem
+where rnk=2 or cnt=1
+
+#1045
+select customer_id
+from customer
+group by 1
+having count(distinct product_key) =(select count(distinct product_key) from product)
+
+#1164
+select product_id, new_price as price
+from( select product_id,new_price, 
+dense_rank()over(partition by product_id order by change_date desc) as rnk
+from products
+where change_date<='2019-08-16') tem
+where rnk=1
+union
+select product_id,  10  as price
+from products
+group by product_id 
+having min(change_date)>'2019-08-16'
+
