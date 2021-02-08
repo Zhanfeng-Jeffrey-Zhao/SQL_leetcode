@@ -743,6 +743,7 @@ from employees
 group by 1,2
 order by 3
 
+#1532
 select name as customer_name, customers.customer_id, order_id, order_date
 from( select order_id, customer_id,order_date,
 dense_rank() over (partition by customer_id order by order_date desc) as rnk
