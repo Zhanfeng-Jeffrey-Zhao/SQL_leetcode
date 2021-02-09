@@ -892,6 +892,139 @@ where (customer_id,order_date) in (select customer_id, min(order_date) as order_
                                     group by 1 )
 
 
+#612
+select min(round(sqrt(pow(p1.x-p2.x,2)+pow(p1.y-p2.y,2)),2)) as shortest
+from point_2d p1
+join point_2d p2 on p1.x!=p2.x or p1.y!=p2.y
 
+#1555
+with a as (select u.user_id,u.user_name,
+u.credit-ifnull(t1.amount,0)+ifnull(t2.amount,0) as amount
+from users u
+left join (select paid_by,sum(amount) as amount
+           from transactions
+           group by 1) t1 on t1.paid_by=u.user_id
+left join (select paid_to,sum(amount) as amount
+           from transactions
+           group by 1) t2 on  t2.paid_to=u.user_id)
+select user_id,user_name, amount as credit,
+case when amount<0 then "Yes" else 'No' end as credit_limit_breached
+from a
 
->>>>>>> d1afdc979e29db7ca996cc2f559af3a5db17fb1b
+#585
+select  sum(TIV_2016) as TIV_2016
+from insurance
+where TIV_2015 in (select TIV_2015
+                  from insurance 
+                  group by 1
+                  having count(*)>1)
+    and (LAT,LON) in(select LAT,LON
+                    from insurance
+                    group by LAT,LON
+                    having count(*)=1)
+
+#1107
+select login_date, count(*) as user_count
+from (select min(activity_date) as login_date, user_id as user_count
+from traffic
+where activity='login' 
+group by 2
+having datediff('2019-06-30',login_date)<=90) tem
+group by 1
+order by 1
+
+#1459
+select p_1.id as p1, p_2.id as p2,
+abs(p_1.x_value-p_2.x_value)*abs(p_1.y_value-p_2.y_value) as area
+from points p_1, points p_2
+where  p_1.id<p_2.id and (p_1.x_value!=p_2.x_value) and (p_1.y_value!=p_2.y_value)
+order by area desc, p1, p2
+
+#1501
+with a as (select c.name,c1.duration as duration
+from Country c
+left join person p on left(p.phone_number,3)=c.country_code
+left join calls c1 on c1.caller_id=p.id
+union all
+select c.name,duration as duration
+from Country c
+left join person p on left(p.phone_number,3)=c.country_code
+left join calls c1 on c1.callee_id=p.id)
+select name as country 
+from a
+group by 1
+having avg(duration)>(select avg(duration) from calls)
+
+#1149
+select distinct viewer_id as id
+from views
+group by viewer_id ,view_date
+having count(distinct article_id)>1
+order by 1
+
+#1205
+with a as (select *
+from transactions
+where state='approved'
+union all
+select c.trans_id as id, t.country,'chargeback' as state,t.amount,c.trans_date
+from  chargebacks c
+join transactions t on c.trans_id=t.id)
+select left(trans_date,7) as month, country, 
+count(case when state='approved' then 1 end) as approved_count, 
+sum(case when state='approved' then amount else 0 end) as approved_amount,
+count(case when state='chargeback' then 1 end) as chargeback_count, 
+sum(case when state='chargeback' then amount else 0 end) as chargeback_amount 
+from a
+group by 1,2
+
+#1158
+select u.user_id as buyer_id, u.join_date, 
+count(case when year(o.order_date)=2019 then 1 end) as orders_in_2019 
+from users u
+left join orders o on u.user_id=o.buyer_id
+group by 1
+order by 1
+
+#1070
+select product_id, year as first_year,quantity , price
+from sales
+where (product_id, year) in (select product_id, min(year)
+                            from sales
+                            group by 1)
+
+#602
+with a as (select id, count(*) as cnt
+from (select requester_id as id
+      from request_accepted
+      union all
+      select accepter_id as id
+      from request_accepted) tem
+group by 1)
+select id, cnt as num
+from a
+where  cnt in (select max(cnt)
+               from a)
+
+#580
+select dept_name, count(s.student_id) as student_number
+from department d
+left join student s on s.dept_id=d.dept_id
+group by 1
+order by 2 desc,1
+
+#578
+select question_id as survey_log
+from survey_log
+group by 1
+order by count(answer_id)/sum(if(action='show',1,0)) desc
+limit 1
+
+#574
+select name
+from candidate c
+right join vote v on c.id=v.candidateId
+group by v.candidateId
+order by count(v.candidateId) desc
+limit 1
+
