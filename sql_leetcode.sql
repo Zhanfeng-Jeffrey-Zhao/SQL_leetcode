@@ -890,8 +890,3 @@ from delivery
 where (customer_id,order_date) in (select customer_id, min(order_date) as order_date 
                                    from delivery
                                     group by 1 )
-
-
-
-
->>>>>>> d1afdc979e29db7ca996cc2f559af3a5db17fb1b
