@@ -1019,3 +1019,156 @@ right join vote v on c.id=v.candidateId
 group by v.candidateId
 order by count(v.candidateId) desc
 limit 1
+
+#1127
+with tem as (select distinct spend_date, 'desktop' platform from spending 
+    union all
+    select distinct spend_date, 'mobile' platform from spending 
+    union all
+    select distinct spend_date, 'both' platform from spending),
+    
+  res as (
+      select user_id, spend_date,
+      case when count(*)=1 then platform else 'both' end as platform,
+        sum(amount) as amount
+       from spending
+       group by 1, 2)
+          
+          
+select t.spend_date, t.platform, ifnull(sum(r.amount),0) as  total_amount , count(user_id) as total_users
+from tem t
+left join res r on t.spend_date=r.spend_date and t.platform=r.platform
+group by 1,2
+
+#1225
+with 
+tem1 as (SELECT datediff(fail_date,'2019-01-01' ) as diff,RANK() OVER (ORDER BY fail_date) AS rk,fail_date AS day
+FROM Failed
+WHERE year(fail_date)=2019),
+tem2 as (SELECT datediff(success_date,'2019-01-01') as diff,RANK() OVER (ORDER BY success_date) AS rk, success_date AS day
+FROM Succeeded
+WHERE year(success_date)=2019),
+tem3 as (select 'failed' as period_state, min(day) as start_date, max(day) as end_date   
+         from tem1
+         group by diff-rk
+         union all
+         select 'succeeded' as period_state, min(day) as start_date, max(day) as end_date 
+         from tem2
+         group by CAST(rk AS SIGNED)-diff)
+select *
+from tem3
+order by  start_date 
+
+#1159
+with tem as (select seller_id, item_id, rank()over(partition by seller_id order by order_date) as rk
+from orders)
+select u.user_id as seller_id,
+case when u.favorite_brand=i.item_brand then'yes' else 'no' end as 2nd_item_fav_brand 
+from users u
+left join tem t on u.user_id=t.seller_id and t.rk=2
+left join items i on i.item_id=t.item_id
+
+#1757
+select product_id
+from products
+where low_fats ='Y' and recyclable='Y'
+
+#1097
+with tem as (select player_id, min(event_date) as install_dt,
+case when (player_id,  min(event_date)+1) in (select player_id, event_date from Activity) then 1 else 0 end as retention         
+from activity
+group by player_id)
+select install_dt, count(player_id) as installs,round(sum( retention)/count(player_id),2) as Day1_retention 
+from tem
+group by 1
+
+#618
+with Am as (select ROW_NUMBER() over(order by name) as row_n,name as 'America'
+from student
+where continent ='America'),
+Asia as (select ROW_NUMBER() over(order by name) as row_n,name as 'Asia'
+from student
+where continent ='Asia'),
+Europe as (select ROW_NUMBER() over(order by name) as row_n,name as 'Europe'
+from student
+where continent ='Europe')
+select Am.America,Asia.Asia,Europe.Europe
+from Am
+left join Asia on Am.row_n=Asia.row_n
+left join Europe on Am.row_n=Europe.row_n
+
+#615
+with tem1 as (select left(pay_date,7) as pay_month,department_id, avg(amount) as avg_s
+from salary s 
+join employee e on s.employee_id=e.employee_id
+group by department_id,pay_month),
+tem2 as (select left(pay_date,7) as pay_month,department_id, avg(amount) as total_avg
+from salary s 
+join employee e on s.employee_id=e.employee_id
+group by pay_month),
+tem3 as (select t1.pay_month, t1.department_id, t1.avg_s, t2.total_avg
+from tem1 t1
+join tem2 t2 on t1.pay_month=t2.pay_month)
+select pay_month,department_id,
+case when avg_s>total_avg then 'higher'
+when  avg_s=total_avg then 'same'
+else 'lower' end as comparison  
+from tem3
+
+#579
+with tem as (select id, month, sum(salary) over (partition by id order by month rows between 2 preceding and current row) as salary,
+rank() over(partition by id order by month desc) as rnk
+from  Employee)
+select id, month, salary
+from tem
+where rnk!=1
+
+#1635
+# Write your MySQL query statement below
+with recursive months as (
+select 1 as month
+union all
+select month+1
+from months
+where month<12),
+tem1 as (
+select month (requested_at) as month,count(driver_id) as cnt
+from rides r 
+left join acceptedrides  a on r.ride_id=a.ride_id 
+where year(requested_at)=2020
+group by 1),
+tem2 as (select month(join_date) as month,cnt as active_drivers
+       from (select join_date, count(driver_id) over (order by join_date) as cnt
+              from drivers
+              where year(join_date) <= 2020) a
+       where year(join_date)=2020)
+select distinct m.month,ifnull(max(active_drivers) over (order by m.month),0) as active_drivers,ifnull(cnt,0) as accepted_rides
+from months m
+left join tem1  t1 on m.month=t1.month
+left join tem2 t2 on m.month=t2.month
+
+#1645
+with recursive months as (
+select 1 as month
+union all
+select month+1
+from months
+where month<12),
+tem1 as (select month(requested_at) as month,count(distinct a.driver_id) as cnt1
+from rides r
+join acceptedRides a on r.ride_id=a.ride_id
+join drivers d on d.driver_id=a.driver_id and (d.join_date<=r.requested_at)
+where year(requested_at)=2020 
+group by month),
+tem2 as (select month(join_date) as month,cnt as active_drivers
+       from (select join_date, count(driver_id) over (order by join_date) as cnt
+              from drivers
+              where year(join_date) <= 2020) a
+       where year(join_date)=2020)
+select m.month, ifnull(round(100*ifnull(cnt1, 0)/ifnull(max(active_drivers) over (order by m.month),0),2),0)as working_percentage
+from months m
+left join tem1 t1 on m.month=t1.month
+left join tem2 t2 on m.month=t2.month
+order by 1
+
+
