@@ -1171,4 +1171,80 @@ left join tem1 t1 on m.month=t1.month
 left join tem2 t2 on m.month=t2.month
 order by 1
 
+#1336
+with tem1 as (select v.user_id, visit_date,count(transaction_date) as transactions
+from visits v
+left join transactions t on v.user_id=t.user_id and v.visit_date=t.transaction_date
+group by 1,2),
+tem2 as (select transactions as transactions_count, count(user_id) as visits_count 
+from tem1
+group by 1),
+tem3 as (SELECT ROW_NUMBER() OVER() row_num
+FROM Transactions
+UNION 
+SELECT 0)
+select row_num as transactions_count ,ifnull(visits_count,0) as visits_count
+from tem3 t3
+left  join tem2  t2 on t2.transactions_count=t3.row_num
+where row_num<=(select max(transactions) from tem1)
+order by 1 
+
+#1384
+with tem1 as (select s.product_id,product_name, '2018' as report_year,
+case when year(period_start)=2018 and year(period_end)>2018 then average_daily_sales*(datediff('2018-12-31',period_start)+1)
+when year(period_start)=2018 and year(period_end)=2018  then average_daily_sales*(datediff(period_end,period_start)+1)
+else null end as  total_amount
+from product p
+join sales  s on p.product_id=s.product_id),
+tem2 as (select s.product_id,product_name, '2019' as report_year,
+case when year(period_start)<2019 and year(period_end)=2019 then average_daily_sales*(datediff(period_end,'2019-01-01')+1)
+when year(period_start)<2019 and year(period_end)>2019  then average_daily_sales*365
+when year(period_start)=2019 and year(period_end)=2019  then average_daily_sales*(datediff(period_end,period_start)+1)
+when year(period_start)=2019 and year(period_end)>2019 then average_daily_sales*(datediff('2019-12-31',period_start)+1)
+else null end as  total_amount
+from product p
+join sales  s on p.product_id=s.product_id),
+tem3 as (select s.product_id,product_name, '2020' as report_year,
+case when year(period_start)<2020 and year(period_end)=2020 then average_daily_sales*(datediff(period_end,'2020-01-01')+1)
+when year(period_start)=2020 and year(period_end)=2020  then average_daily_sales*(datediff(period_end,period_start)+1)
+else null end as total_amount
+from product p
+join sales  s on p.product_id=s.product_id),
+tem4 as (select * from tem3
+where total_amount
+union all
+select * from tem1
+where total_amount
+union all
+select * from tem2
+where total_amount)
+select * from tem4
+order by product_id,report_year
+
+#596
+with tem as (select *, ROW_NUMBER() OVER(PARTITION BY COMPANY ORDER BY Salary ASC, Id ASC) AS RN_ASC,
+ROW_NUMBER() OVER(PARTITION BY COMPANY ORDER BY Salary DESC, Id DESC) AS RN_DESC
+from employee)
+select id, company, salary
+from tem
+where RN_ASC BETWEEN RN_DESC - 1 AND RN_DESC + 1
+
+#1280
+select s.student_id,s.student_name,s2.subject_name,count(e.subject_name) as attended_exams 
+from students s
+cross join subjects s2
+left join examinations e on e.student_id=s.student_id and s2.subject_name=e.subject_name
+group by 2,3
+order by 1,3
+
+#571
+with t as (select *, sum(frequency) over(order by number) freq, 
+           (sum(frequency) over())/2 median_num
+           from numbers)
+           
+select avg(number) as median
+from t
+where median_num between (freq-frequency) and freq
+
+
 
